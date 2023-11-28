@@ -2,63 +2,49 @@ import { useEffect } from 'react'
 import { useAppSelector, useAppDispatch } from '../../app/hooks'
 import { setCanvas, selectCanvas } from './canvasSlice'
 import { Typography } from 'antd'
+import {
+    updateDataFrom2DSpace,
+    updateDataFromImage,
+    updateDataFromVideo,
+} from './canvasFunctions'
 
-export function Canvas(props: { fontSize: number; image: string }) {
+export function Canvas(props: {
+    fontSize: number
+    image?: string
+    video?: string
+    space2D?: {
+        width: number
+        height: number
+        objectsRender: (tick: number) => string[][]
+    }
+}) {
     const canvas = useAppSelector(selectCanvas)
     const dispatch = useAppDispatch()
-    const gradient = ' .:!/r(l1Z4H9W8$@'
-
-    async function init(
-        imageSrc: string,
-    ): Promise<{ values: string; width: number; height: number }> {
-        return await new Promise((resolve) => {
-            const image = new Image()
-            image.src = imageSrc
-            image.addEventListener('load', () => {
-                const canvas = document.createElement('canvas')
-                canvas.width = image.width
-                canvas.height = image.height
-                const ctx = canvas.getContext('2d')
-                ctx?.drawImage(image, 0, 0, image.width, image.height)
-                const imageData = ctx?.getImageData(
-                    0,
-                    0,
-                    image.width,
-                    image.height,
-                )
-                const lettersData = []
-                for (
-                    let x = 0, len = imageData?.data.length as number;
-                    x < len;
-                    x += 4
-                ) {
-                    const r = imageData?.data[x] as number
-                    const g = imageData?.data[x + 1] as number
-                    const b = imageData?.data[x + 2] as number
-                    const avg = Math.floor((r + g + b) / 3)
-                    if (avg === 255) lettersData.push(gradient[16])
-                    else lettersData.push(gradient[Math.floor(avg / 15)])
-                }
-                const output = []
-                const chunkSize = image.width
-                for (let i = 0; i < lettersData.length; i += chunkSize) {
-                    const chunk = lettersData.slice(i, i + chunkSize)
-                    output.push(`${chunk.join('')}\n`)
-                }
-                resolve({
-                    values: output.join(''),
-                    width: image.width,
-                    height: image.height,
-                })
-            })
-        })
-    }
 
     useEffect(() => {
-        init(props.image).then((data) => {
-            dispatch(setCanvas(data))
-        })
-    }, [dispatch, props.image])
+        if (props.image != null) {
+            updateDataFromImage(
+                props.image,
+                (data: { values: string; width: number; height: number }) => {
+                    dispatch(setCanvas(data))
+                },
+            )
+        } else if (props.video != null) {
+            updateDataFromVideo(
+                props.video,
+                (data: { values: string; width: number; height: number }) => {
+                    dispatch(setCanvas(data))
+                },
+            )
+        } else if (props.space2D != null) {
+            updateDataFrom2DSpace(
+                props.space2D,
+                (data: { values: string; width: number; height: number }) => {
+                    dispatch(setCanvas(data))
+                },
+            )
+        }
+    }, [dispatch, props.image, props.space2D, props.video])
 
     return (
         <Typography.Text
@@ -77,7 +63,6 @@ export function Canvas(props: { fontSize: number; image: string }) {
                 whiteSpace: 'pre',
                 margin: 'auto',
             }}
-            id="canvas_text"
         >
             {canvas.values}
         </Typography.Text>
