@@ -61,7 +61,11 @@ export function updateDataFromImage(
 
 export function updateDataFromVideo(
     videoSrc: string,
-    callback: (data: { values: string; width: number; height: number }) => void,
+    callback: (data: {
+        values: string
+        width: number
+        height: number
+    }) => boolean,
 ) {
     const video = document.createElement('video')
     video.src = videoSrc
@@ -74,10 +78,11 @@ export function updateDataFromVideo(
         const canvas = document.createElement('canvas')
         canvas.width = video.videoWidth
         canvas.height = video.videoHeight
-        const ctx = canvas.getContext('2d')
+        const ctx = canvas.getContext('2d', { willReadFrequently: true })
         function update() {
-            callback(getData(ctx, video, true))
-            requestAnimationFrame(update)
+            const check = callback(getData(ctx, video, true))
+            if (check) requestAnimationFrame(update)
+            else video.remove()
         }
         video.play()
         update()
@@ -90,7 +95,11 @@ export async function updateDataFrom2DSpace(
         height: number
         objectsRender: (tick: number) => string[][]
     },
-    callback: (data: { values: string; width: number; height: number }) => void,
+    callback: (data: {
+        values: string
+        width: number
+        height: number
+    }) => boolean,
 ) {
     for (let t = 0; t < 10000; t++) {
         await new Promise((resolve) => setTimeout(resolve, 20))
@@ -109,10 +118,11 @@ export async function updateDataFrom2DSpace(
         for (const chunk of output) {
             chunks.push(chunk.join(''))
         }
-        callback({
+        const check = callback({
             values: chunks.reverse().join('\n'),
             width: space.width,
             height: space.height,
         })
+        if (!check) break
     }
 }

@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useAppSelector, useAppDispatch } from '../../app/hooks'
 import { setCanvas, selectCanvas } from './canvasSlice'
+import { store } from '../../app/store'
 import { Typography } from 'antd'
 import {
     updateDataFrom2DSpace,
@@ -33,14 +34,18 @@ export function Canvas(props: {
             updateDataFromVideo(
                 props.video,
                 (data: { values: string; width: number; height: number }) => {
+                    if (store.getState().canvas.type !== 'video') return false
                     dispatch(setCanvas(data))
+                    return true
                 },
             )
         } else if (props.space2D != null) {
             updateDataFrom2DSpace(
                 props.space2D,
                 (data: { values: string; width: number; height: number }) => {
+                    if (store.getState().canvas.type !== '2d') return false
                     dispatch(setCanvas(data))
+                    return true
                 },
             )
         }
